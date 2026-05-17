@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import slugify from 'slugify';
 
 const tourSchema = new mongoose.Schema({
     name: {
@@ -37,6 +38,7 @@ const tourSchema = new mongoose.Schema({
         trim: true,
         required: [true, 'A tour must have a description']
     },
+    slug: String,
     description: {
         type: String,
         trim : true,
@@ -51,8 +53,38 @@ const tourSchema = new mongoose.Schema({
         default: Date.now(),
         select: false
     },
-    startDates: [Date]
+    startDates: [Date],
+    secretTour: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    toJSON: { virtuals: true},
+    toObject: { virtuals: true }
 });
+
+tourSchema.virtual('durationWeeks').get(function() {
+    return this.duration / 7;
+});
+
+// document middlerware
+// runs before .save and the .create command
+// does not work on insertMany
+tourSchema.pre('save', function(){
+    this.slug = slugify(this.name, {lower: true});
+});
+
+//query middleware
+tourSchema.pre(/^find/, function(){
+    this.find({ secretTour: {$ne: true}});
+})
+
+//aggregation middleware
+tourSchema.pre('aggregate', function() {
+    this.pipeline().unshift({ $match: { secretTour: {$ne: true}}}); 
+    console.log(this);
+
+})
 
 const Tour = mongoose.model('Tour', tourSchema);
 export default Tour;
