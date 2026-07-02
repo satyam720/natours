@@ -2,7 +2,8 @@ import express from 'express';
 import morgan from 'morgan';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { nextTick } from 'process';
+import AppError from './Utils/appError.js';
+import { globalErrorHandler } from './controllers/errorController.js';
 
 const fileUrl = fileURLToPath(import.meta.url);
 const __dirname = dirname(fileUrl);
@@ -21,11 +22,6 @@ app.use(express.static('public'));
 app.use(express.static(`${__dirname}/public`));
 
 app.use((req, res, next) => {
-    console.log('Hello from the middleware 👋');
-    next();
-});
-
-app.use((req, res, next) => {
     req.requestTime = new Date().toISOString();
     next();
 });
@@ -38,5 +34,11 @@ app.get('/api/config', (req, res) => {
 });
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+
+app.all(/.*/, (req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+app.use(globalErrorHandler);
 
 export default app;
