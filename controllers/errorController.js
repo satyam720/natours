@@ -1,4 +1,4 @@
-import AppError from "../Utils/appError.js";
+import AppError from '../Utils/appError.js';
 
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -22,7 +22,7 @@ const sendErrorProd = (err, res) => {
     // 1) log error
     console.error('ERROR', err);
 
-    // 2) send generic message 
+    // 2) send generic message
     res.status(500).json({
       status: 'error',
       message: 'Something went wrong!',
@@ -42,11 +42,15 @@ const handleDuplicateFieldsDB = (err) => {
 };
 
 const handleValidationErrorDB = (err) => {
-  const errors = Object.values(err.errors).map(val => val.message);
+  const errors = Object.values(err.errors).map((val) => val.message);
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
 
+const handleJWTError = (err) =>
+  new AppError('invalid token. Please login again', 401);
+const handleJWTExipiredError = (err) =>
+  new AppError('Your token has expired, please login again', 401);
 
 export const globalErrorHandler = function (err, req, res, next) {
   console.log(err.stack);
@@ -56,18 +60,26 @@ export const globalErrorHandler = function (err, req, res, next) {
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === 'production') {
-    let error = {...err};
+    let error = { ...err };
 
     if (err.name === 'CastError') {
       error = handleCastErrorDB(error);
     }
 
-    if(err.code === 11000){
-        error = handleDuplicateFieldsDB(error);
+    if (err.code === 11000) {
+      error = handleDuplicateFieldsDB(error);
     }
 
-    if(err.name === 'ValidationError'){
-        error = handleValidationErrorDB(error);
+    if (err.name === 'ValidationError') {
+      error = handleValidationErrorDB(error);
+    }
+
+    if ((err.name = 'JsonWebTokenError')) {
+      error = handleJWTError(error);
+    }
+
+    if (err.name == 'TokenExpiredError') {
+      error = handleJWTExipiredError(error);
     }
 
     sendErrorProd(error, res);

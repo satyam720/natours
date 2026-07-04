@@ -1,9 +1,17 @@
-const getAllUsers = (req, res) => {
+import User from "../models/userModel.js";
+import { catchAsync } from "../Utils/catchAsync.js";
+
+const getAllUsers = catchAsync(async (req, res, next) => {
+    const users = await User.find();
+
     res.status(200).json({
         status: 'success',
-        message: 'This route is not yet defined! Please use /signup instead'
+        results: users.length,
+        data: {
+        users,
+        },
     });
-}
+});
 
 const getUser = (req, res) => {
     res.status(200).json({
