@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import isEmail from 'validator/lib/isEmail.js';
 import bcrypt from 'bcryptjs';
@@ -37,7 +38,9 @@ const userSchema = mongoose.Schema({
       message: 'Passwords are not the same!',
     },
   },
-  passwordChangedAt: Date
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date
 });
 
 userSchema.pre('save', async function () {
@@ -50,6 +53,14 @@ userSchema.pre('save', async function () {
 
   this.passwordConfirm = undefined;
 });
+
+userSchema.pre('save', function(){
+  if(!this.isModified('password') ||  this.isNew){
+    return;
+  }
+
+  this.passwordChangedAt = Date.now() - 1000;
+})
 
 // instance method:
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword){
@@ -68,6 +79,15 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp){
 
   // false means not changed
   return false;
+}
+
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  console.log({resetToken}, this.passwordResetToken);
+  return resetToken;
 }
 
 const User = mongoose.model('User', userSchema);
