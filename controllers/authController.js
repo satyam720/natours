@@ -14,12 +14,24 @@ const signToken = (id) => {
 
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
+  const cookieOptoins = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    httpOnly: true,
+  };
+  if (process.env.NODE_ENV == 'production') {
+    cookieOptoins.secure = true;
+  }
+
+  res.cookie('jwt', token, cookieOptoins);
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
     token,
     data: {
-      user
+      user,
     },
   });
 };
@@ -179,7 +191,7 @@ const updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('+password');
   console.log(user);
   //2) check if posted password is correct
-  if (!await user.correctPassword(req.body.passwordCurrent, user.password)) {
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(
       new AppError('Invalid current password! please try again', 401),
     );
@@ -193,4 +205,12 @@ const updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
-export { signup, login, protect, restrictTo, forgotPassword, resetPassword, updatePassword };
+export {
+  signup,
+  login,
+  protect,
+  restrictTo,
+  forgotPassword,
+  resetPassword,
+  updatePassword,
+};
