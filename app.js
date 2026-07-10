@@ -2,7 +2,7 @@ import express from 'express';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-
+import sanitizeHtml from 'sanitize-html';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import AppError from './Utils/appError.js';
@@ -39,6 +39,53 @@ app.use(
     limit: '10kb',
   }),
 );
+
+// data sanitization against NoSQL query injection and XSS
+const sanitizeInput = (req, res, next) => {
+  const sanitizeValue = (value) => {
+    if (typeof value === 'string') {
+      return sanitizeHtml(value, {
+        allowedTags: [],
+        allowedAttributes: {},
+      });
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(sanitizeValue);
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.entries(value).reduce((acc, [key, nestedValue]) => {
+        if (key.startsWith('$') || key.includes('.')) {
+          return acc;
+        }
+
+        acc[key] = sanitizeValue(nestedValue);
+        return acc;
+      }, {});
+    }
+
+    return value;
+  };
+
+  req.body = sanitizeValue(req.body);
+
+  Object.defineProperty(req, 'query', {
+    value: sanitizeValue(req.query),
+    configurable: true,
+    writable: true,
+  });
+
+  Object.defineProperty(req, 'params', {
+    value: sanitizeValue(req.params),
+    configurable: true,
+    writable: true,
+  });
+
+  next();
+};
+
+app.use(sanitizeInput);
 
 // serving static files
 app.use(express.static('public'));
