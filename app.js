@@ -1,5 +1,6 @@
 import express from 'express';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import AppError from './Utils/appError.js';
@@ -15,8 +16,17 @@ import userRouter from './routes/userRoutes.js';
 const app = express();
 app.set('query parser', 'extended');
 
-// Middleware
+// Global Middleware
 app.use(morgan('dev'));
+
+const limiter = rateLimit({
+    max: 100,
+    windowMs: 60 * 60 * 1000,
+    message: "Too many requests from this IP, Please try again in an hour!"  
+});
+
+app.use('/api', limiter);
+
 app.use(express.json());
 app.use(express.static('public'));
 app.use(express.static(`${__dirname}/public`));
