@@ -3,6 +3,8 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import sanitizeHtml from 'sanitize-html';
+import hpp from 'hpp';
+
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import AppError from './Utils/appError.js';
@@ -86,6 +88,20 @@ const sanitizeInput = (req, res, next) => {
 };
 
 app.use(sanitizeInput);
+
+// prevent paramter pollution
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  }),
+);
 
 // serving static files
 app.use(express.static('public'));
