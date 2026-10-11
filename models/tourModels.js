@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import slugify from 'slugify';
+import User from './userModel.js';
 
 const tourSchema = new mongoose.Schema(
   {
@@ -45,10 +46,10 @@ const tourSchema = new mongoose.Schema(
       type: Number,
       validate: {
         validator: function (val) {
-            //this only points to current doc on new document creation
+          //this only points to current doc on new document creation
           return val < this.price;
         },
-        message: "Discount Price should be below the regular price"
+        message: 'Discount Price should be below the regular price',
       },
     },
     summary: {
@@ -76,6 +77,31 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      // GeoJson -> to specify geoSpatial data
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
   },
   {
     toJSON: { virtuals: true },
@@ -98,6 +124,13 @@ tourSchema.pre('save', function () {
 tourSchema.pre(/^find/, function () {
   this.find({ secretTour: { $ne: true } });
 });
+
+tourSchema.pre(/^find/, function() {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt'
+  });
+})
 
 //aggregation middleware
 tourSchema.pre('aggregate', function () {
