@@ -15,6 +15,7 @@ const __dirname = dirname(fileUrl);
 
 import tourRouter from './routes/tourRoutes.js';
 import userRouter from './routes/userRoutes.js';
+import reviewRouter from './routes/reviewRoute.js';
 
 const app = express();
 app.set('query parser', 'extended');
@@ -121,6 +122,8 @@ app.get('/api/config', (req, res) => {
 });
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
+
 
 app.all(/.*/, (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
