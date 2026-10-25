@@ -49,3 +49,9 @@ reviewSchema.pre(/^find/, async function() {
 const Review = mongoose.model('Review', reviewSchema);
 
 export default Review;
+
+// this is a nested route
+// basically access reviews resource on the tour resource
+// POST /tour/234fad4/reviews
+// GET /tour/234fad4/reviews
+// GET /tour/234fad4/reviews/94888
