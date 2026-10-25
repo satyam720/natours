@@ -56,10 +56,17 @@ const createUser = (req, res) => {
   });
 };
 
+const getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+}
+
+
+
 // do not update passwords with this!
 const getUser = getOne(User);
 const getAllUsers = getAll(User);
 const updateUser = updateOne(User)
 const deleteUser = deleteOne(User);
 
-export { getAllUsers, getUser, createUser, updateUser, deleteUser, updateMe, deleteMe };
+export { getAllUsers, getUser, createUser, updateUser, deleteUser, updateMe, deleteMe, getMe };
