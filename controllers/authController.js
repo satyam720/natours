@@ -51,7 +51,6 @@ const signup = catchAsync(async (req, res, next) => {
 
 const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-
   // 1) if email and password actually exist
   if (!email || !password) {
     return next(new AppError('Email or password is missing', 400));
