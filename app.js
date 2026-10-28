@@ -6,7 +6,7 @@ import sanitizeHtml from 'sanitize-html';
 import hpp from 'hpp';
 
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import path, { dirname } from 'node:path';
 import AppError from './Utils/appError.js';
 import { globalErrorHandler } from './controllers/errorController.js';
 
@@ -18,9 +18,14 @@ import userRouter from './routes/userRoutes.js';
 import reviewRouter from './routes/reviewRoute.js';
 
 const app = express();
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
 app.set('query parser', 'extended');
 
 // Global Middleware
+// serving static files
+app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 // security http headers
 app.use(helmet());
 
@@ -104,9 +109,7 @@ app.use(
   }),
 );
 
-// serving static files
-app.use(express.static('public'));
-app.use(express.static(`${__dirname}/public`));
+
 
 // test middleware
 app.use((req, res, next) => {
@@ -115,6 +118,25 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.get('/', (req, res) => {
+  res.status(200).render('base', {
+    tour: 'The Forest Hiker',
+    user: 'Jonas'
+  });
+})
+
+app.get('/overview', (req, res) => {
+  res.status(200).render('overview', {
+    title: "All Tours"
+  })
+})
+
+app.get('/tour', (req, res) => {
+  res.status(200).render('tour', {
+    title: "The Forest Hiker Tour"
+  })
+})
+
 app.get('/api/config', (req, res) => {
   res.json({
     mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN,
