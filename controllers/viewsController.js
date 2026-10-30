@@ -24,3 +24,9 @@ export const getTourView = catchAsync(async function (req, res,next){
     mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN,
   });
 })
+
+export const getLoginForm = (req, res) => {
+  res.status(200).render('login', {
+    title: 'Log into your acount'
+  })
+}

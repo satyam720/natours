@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import sanitizeHtml from 'sanitize-html';
 import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
 
 import { fileURLToPath } from 'node:url';
 import path, { dirname } from 'node:path';
@@ -32,9 +33,9 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        'script-src': ["'self'", 'https://api.mapbox.com'],
-        'connect-src': ["'self'", 'https://*.mapbox.com'],
-        'img-src': ["'self'", 'data:', 'blob:', 'https://*.mapbox.com'],
+        'script-src': ["'self'", 'https://api.mapbox.com', 'https://cdn.jsdelivr.net'],
+        'connect-src': ["'self'", 'https://*.mapbox.com', 'https://cdn.jsdelivr.net'],
+        'img-src': ["'self'", 'data:', 'blob:', 'https://*.mapbox.com' ],
         'worker-src': ["'self'", 'blob:'],
         'child-src': ["'self'", 'blob:'],
       },
@@ -55,6 +56,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // body parser, reading data from body into req.body
+app.use(cookieParser());
 app.use(
   express.json({
     limit: '10kb',
@@ -127,6 +129,7 @@ app.use(
 // test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
+  console.log(req.cookies);
   next();
 });
 
@@ -144,6 +147,9 @@ app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.sendStatus(204);
+});
 
 app.all(/.*/, (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
