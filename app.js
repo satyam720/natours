@@ -28,7 +28,19 @@ app.set('query parser', 'extended');
 app.use(express.static('public'));
 app.use(express.static(path.join(__dirname, 'public')));
 // security http headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        'script-src': ["'self'", 'https://api.mapbox.com'],
+        'connect-src': ["'self'", 'https://*.mapbox.com'],
+        'img-src': ["'self'", 'data:', 'blob:', 'https://*.mapbox.com'],
+        'worker-src': ["'self'", 'blob:'],
+        'child-src': ["'self'", 'blob:'],
+      },
+    },
+  }),
+);
 
 // development logging
 app.use(morgan('dev'));

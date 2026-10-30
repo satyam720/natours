@@ -19,6 +19,8 @@ export const getTourView = catchAsync(async function (req, res,next){
   });
 
   res.status(200).render('tour', {
-    tour
+    title: `${tour.name} Tour`,
+    tour,
+    mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN,
   });
 })
