@@ -12,17 +12,20 @@ const signToken = (id) => {
   });
 };
 
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+});
+
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
   const cookieOptoins = {
+    ...getCookieOptions(),
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
     ),
-    httpOnly: true,
   };
-  if (process.env.NODE_ENV == 'production') {
-    cookieOptoins.secure = true;
-  }
 
   res.cookie('jwt', token, cookieOptoins);
   user.password = undefined;
@@ -74,7 +77,7 @@ const protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
-  }else if(req.cookies.jwt) {
+  } else if (req.cookies.jwt) {
     token = req.cookies.jwt;
   }
 
@@ -206,6 +209,42 @@ const updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+// only for rendered pages, no errors!
+const isLoggedIn = catchAsync(async (req, res, next) => {
+  // 1) getting token and check it its' there
+
+  let token = req.cookies?.jwt;
+  if (!token) {
+    return next();
+  }
+  if (token === 'loggedout') {
+    res.clearCookie('jwt', getCookieOptions());
+    return next();
+  }
+  // 2) verification of the token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log(decoded);
+
+  // 3) check if user still exists
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    return next();
+  }
+  // 4) check if user changed password after the token was issued
+  if (user.changedPasswordAfter(decoded.iat)) {
+    return next();
+  }
+
+  // There is a logged in user
+  res.locals.user = user;
+  next();
+});
+
+const logout = (req, res) => {
+  res.clearCookie('jwt', getCookieOptions());
+  res.status(200).json({ status: 'success' });
+};
+
 export {
   signup,
   login,
@@ -214,4 +253,6 @@ export {
   forgotPassword,
   resetPassword,
   updatePassword,
+  isLoggedIn,
+  logout
 };

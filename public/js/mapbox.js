@@ -1,9 +1,5 @@
-console.log('Hwllo from client side');
 
-const mapContainer = document.getElementById('map');
-
-if (mapContainer) {
-  const initMap = () => {
+  export const initMap = (mapContainer) => {
     const mapboxAccessToken = mapContainer.dataset.mapboxToken;
     if (!mapboxAccessToken) {
       throw new Error('MAPBOX_ACCESS_TOKEN is not configured on the server');
@@ -52,9 +48,6 @@ if (mapContainer) {
     });
   };
 
-  try {
-    initMap();
-  } catch (error) {
-    console.error(error);
-  }
-}
+
+  
+
